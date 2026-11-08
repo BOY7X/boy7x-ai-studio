@@ -1,0 +1,10 @@
+{
+  "name": "BOY7X AI STUDIO",
+  "short_name": "BOY7X Studio",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0b0e14",
+  "theme_color": "#10131b",
+  "description": "Dựng video từ ảnh, ưu tiên miễn phí.",
+  "icons": []
+}

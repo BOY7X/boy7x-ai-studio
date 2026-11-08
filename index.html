@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#10131b">
+<meta name="description" content="BOY7X AI STUDIO - dựng video từ ảnh, ưu tiên miễn phí và chạy trên thiết bị.">
+<link rel="manifest" href="manifest.webmanifest">
+<title>BOY7X AI STUDIO</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0e14;--panel:#151b26;--panel2:#1c2533;--line:#2b3545;--txt:#f3f5f8;--muted:#aab5c5;--accent:#8ed7c2}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#182337 0,#0b0e14 55%);color:var(--txt);font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{padding:22px 18px 14px;max-width:980px;margin:auto}h1{font-size:25px;letter-spacing:.4px;margin:0 0 6px}header p{margin:0;color:var(--muted);line-height:1.5}
+main{max-width:980px;margin:auto;padding:0 14px 40px;display:grid;gap:14px}
+.card{background:linear-gradient(145deg,#182130,#121823);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 12px 30px #0003}
+h2{font-size:17px;margin:0 0 12px}.muted{color:var(--muted);font-size:13px;line-height:1.5}
+button,.filelabel,select,input[type=number]{font:inherit}
+button,.filelabel{border:0;border-radius:12px;padding:12px 15px;background:var(--accent);color:#10221e;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px}
+button.secondary,.filelabel.secondary{background:var(--panel2);color:var(--txt);border:1px solid var(--line)}
+button:disabled{opacity:.45;cursor:not-allowed}
+input[type=file]{display:none}select,input[type=number]{width:100%;background:#0e1420;color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:11px}
+.row{display:flex;gap:9px;flex-wrap:wrap}.row>*{flex:1}.field{display:grid;gap:7px;margin:12px 0}.field label{font-size:13px;color:var(--muted)}
+.preview{background:#05070b;border:1px solid var(--line);border-radius:16px;overflow:hidden;display:grid;place-items:center;min-height:250px}
+canvas{display:block;width:min(100%,360px);height:auto;max-height:65vh;object-fit:contain;background:#05070b}
+#empty{padding:32px;text-align:center;color:var(--muted)}
+#thumbs{display:flex;gap:8px;overflow:auto;padding:10px 0 2px}
+.thumb{width:68px;height:84px;flex:0 0 68px;object-fit:cover;border-radius:9px;border:2px solid transparent}
+.thumb.active{border-color:var(--accent)}
+.status{padding:10px 12px;border-radius:10px;background:#0e1420;color:var(--muted);font-size:13px;line-height:1.45;margin-top:10px}
+.progress{height:7px;background:#273243;border-radius:9px;overflow:hidden;margin-top:10px;display:none}.progress span{display:block;height:100%;width:0;background:var(--accent)}
+small{color:var(--muted)}footer{text-align:center;color:var(--muted);font-size:12px;padding:10px 18px 28px}
+@media(min-width:760px){main{grid-template-columns:1.05fr .95fr}.wide{grid-column:1/-1}}
+</style>
+</head>
+<body>
+<header>
+  <h1>BOY7X AI STUDIO</h1>
+  <p>Biến ảnh thành video — dựng chuyển động ngay trên thiết bị, không cần tài khoản.</p>
+</header>
+<main>
+<section class="card">
+  <h2>1. Ảnh của bạn</h2>
+  <div class="row">
+    <label class="filelabel"><span>＋</span> Chọn ảnh</label>
+    <button class="secondary" id="clearBtn" type="button">Xóa ảnh</button>
+  </div>
+  <input id="photos" type="file" accept="image/*" multiple>
+  <div id="thumbs"></div>
+  <p class="muted">Có thể chọn nhiều ảnh. Ảnh được xử lý trong trình duyệt trên thiết bị của bạn.</p>
+</section>
+<section class="card">
+  <h2>2. Thiết lập video</h2>
+  <div class="field"><label for="ratio">Tỷ lệ khung hình</label>
+    <select id="ratio"><option value="9:16">Dọc 9:16 (TikTok/Reels)</option><option value="16:9">Ngang 16:9</option><option value="1:1">Vuông 1:1</option></select></div>
+  <div class="field"><label for="motion">Chuyển động máy quay</label>
+    <select id="motion"><option value="zoom">Điện ảnh — zoom chậm</option><option value="pan">Lia khung hình</option><option value="zoomout">Thu nhỏ chậm</option><option value="drift">Trôi nhẹ — cinematic</option></select></div>
+  <div class="row">
+    <div class="field"><label for="seconds">Thời lượng mỗi ảnh (giây)</label><select id="seconds"><option>3</option><option selected>5</option><option>8</option><option>10</option></select></div>
+    <div class="field"><label for="fps">Tốc độ khung hình</label><select id="fps"><option value="24">24 fps</option><option value="30" selected>30 fps</option></select></div>
+  </div>
+  <div class="field"><label for="music">Nhạc nền (không bắt buộc)</label><input id="music" type="file" accept="audio/*"></div>
+  <div class="field"><label for="titleText">Dòng chữ trên video (không bắt buộc)</label><input id="titleText" type="text" placeholder="Ví dụ: Một ngày bình yên..." style="width:100%;background:#0e1420;color:white;border:1px solid var(--line);border-radius:10px;padding:11px"></div>
+  <div class="row"><button id="previewBtn" class="secondary" type="button" disabled>Xem thử</button><button id="exportBtn" type="button" disabled>Xuất video</button></div>
+  <div class="progress" id="progress"><span id="bar"></span></div>
+  <div class="status" id="status">Hãy chọn ít nhất một ảnh để bắt đầu.</div>
+</section>
+<section class="card wide">
+  <h2>3. Khung xem trước</h2>
+  <div class="preview"><div id="empty">Ảnh xem trước sẽ xuất hiện tại đây.</div><canvas id="stage" width="720" height="1280" hidden></canvas></div>
+  <div class="muted" style="margin-top:10px">Mẹo: chọn ảnh dọc 9:16 để có bố cục đẹp nhất khi làm video TikTok, Shorts hoặc Reels.</div>
+</section>
+<section class="card wide">
+  <h2>4. AI Image-to-Video</h2>
+  <p class="muted">Đây là khu vực dành cho kết nối mô hình AI tạo chuyển động thật từ ảnh (chuyển động người, tóc, nước, cảnh vật...). Bản hiện tại chưa gửi ảnh lên bất kỳ máy chủ AI nào. Khi tích hợp, bạn sẽ cần chọn một nhà cung cấp có hạn mức miễn phí hoặc tự triển khai máy chủ; các dịch vụ có thể thay đổi giới hạn và chi phí.</p>
+  <button class="secondary" type="button" id="aiInfo">Xem trạng thái AI</button>
+  <div class="status" id="aiStatus" hidden>Chưa kết nối nhà cung cấp AI. Phần dựng video từ ảnh và hiệu ứng chuyển động cục bộ vẫn dùng được miễn phí.</div>
+</section>
+</main>
+<footer>BOY7X AI STUDIO · Bản thử nghiệm độc lập · Không thu phí, không cần tài khoản</footer>
+<script>
+const $=id=>document.getElementById(id);
+const photosInput=$('photos'), thumbs=$('thumbs'), canvas=$('stage'), ctx=canvas.getContext('2d');
+let images=[], active=0, raf=0, previewing=false, objectUrls=[], audioCtx=null;
+const setStatus=t=>$('status').textContent=t;
+document.querySelector('.filelabel').addEventListener('click',()=>photosInput.click());
+function dimensions(){let r=$('ratio').value;return r==='9:16'?[720,1280]:r==='16:9'?[1280,720]:[900,900]}
+function resizeCanvas(){let [w,h]=dimensions();canvas.width=w;canvas.height=h}
+function clearImages(){images.forEach(x=>URL.revokeObjectURL(x.url));images=[];thumbs.innerHTML='';$('previewBtn').disabled=$('exportBtn').disabled=true;canvas.hidden=true;$('empty').hidden=false;cancelAnimationFrame(raf);previewing=false;setStatus('Hãy chọn ít nhất một ảnh để bắt đầu.')}
+$('clearBtn').onclick=clearImages;
+photosInput.onchange=async e=>{
+ const files=[...e.target.files].filter(f=>f.type.startsWith('image/'));
+ if(!files.length)return;
+ clearImages();
+ for(const f of files){const url=URL.createObjectURL(f);const img=new Image();img.src=url;await img.decode();images.push({img,url,name:f.name});}
+ thumbs.innerHTML='';
+ images.forEach((item,i)=>{let im=document.createElement('img');im.src=item.url;im.className='thumb'+(i===0?' active':'');im.onclick=()=>{active=i;document.querySelectorAll('.thumb').forEach((t,j)=>t.classList.toggle('active',j===i));drawStill(i)};thumbs.appendChild(im)});
+ $('previewBtn').disabled=$('exportBtn').disabled=false;$('empty').hidden=true;canvas.hidden=false;resizeCanvas();drawStill(0);setStatus(`${images.length} ảnh đã sẵn sàng. Bạn có thể xem thử hoặc xuất video.`);
+};
+function drawCover(img,scale=1,ox=0,oy=0){
+ const W=canvas.width,H=canvas.height,ratio=Math.max(W/img.width,H/img.height)*scale;
+ const w=img.width*ratio,h=img.height*ratio;
+ ctx.drawImage(img,(W-w)/2+ox,(H-h)/2+oy,w,h);
+}
+function drawStill(i){if(!images[i])return;resizeCanvas();ctx.fillStyle='#05070b';ctx.fillRect(0,0,canvas.width,canvas.height);drawCover(images[i].img);drawCaption(0)}
+function drawCaption(alpha=1){const t=$('titleText').value.trim();if(!t)return;ctx.save();ctx.globalAlpha=alpha;const size=Math.max(25,canvas.width*.045);ctx.font=`600 ${size}px -apple-system, sans-serif`;ctx.textAlign='center';ctx.textBaseline='bottom';ctx.shadowColor='#000';ctx.shadowBlur=10;ctx.fillStyle='#fff';ctx.fillText(t,canvas.width/2,canvas.height*.91,canvas.width*.86);ctx.restore()}
+function frameAt(time,index){
+ const item=images[index],dur=Number($('seconds').value)*1000,p=Math.min(1,time/dur),W=canvas.width,H=canvas.height;
+ ctx.fillStyle='#05070b';ctx.fillRect(0,0,W,H);
+ let s=1,ox=0,oy=0,m=$('motion').value;
+ if(m==='zoom')s=1+.13*p;
+ if(m==='zoomout')s=1.13-.13*p;
+ if(m==='pan'){s=1.18;ox=(.5-p)*W*.12;}
+ if(m==='drift'){s=1.1;ox=Math.sin(p*Math.PI)*W*.025;oy=-p*H*.025;}
+ drawCover(item.img,s,ox,oy);drawCaption(Math.min(1,p*5,(1-p)*5));
+}
+function animatePreview(){
+ if(!images.length)return;previewing=true;const start=performance.now();const dur=Number($('seconds').value)*1000;
+ function tick(now){if(!previewing)return;let elapsed=(now-start)%dur;frameAt(elapsed,active);raf=requestAnimationFrame(tick)}
+ cancelAnimationFrame(raf);raf=requestAnimationFrame(tick);
+}
+$('previewBtn').onclick=()=>{if(previewing){previewing=false;cancelAnimationFrame(raf);drawStill(active);$('previewBtn').textContent='Xem thử'}else{$('previewBtn').textContent='Dừng xem';animatePreview()}};
+$('ratio').onchange=()=>{if(images.length)drawStill(active)};
+$('titleText').oninput=()=>{if(images.length&&!previewing)drawStill(active)};
+function mimeType(){const opts=['video/mp4;codecs=avc1.42E01E','video/mp4','video/webm;codecs=vp9','video/webm'];return opts.find(t=>window.MediaRecorder&&MediaRecorder.isTypeSupported(t))||''}
+$('exportBtn').onclick=async()=>{
+ if(!images.length)return;
+ const mime=mimeType();if(!mime){setStatus('Trình duyệt này chưa hỗ trợ xuất video trực tiếp. Hãy thử mở ứng dụng bằng Safari phiên bản mới nhất hoặc Chrome.');return}
+ previewing=false;cancelAnimationFrame(raf);resizeCanvas();
+ const fps=Number($('fps').value),dur=Number($('seconds').value)*1000,total=dur*images.length;
+ const stream=canvas.captureStream(fps);let audioElement=null,audioObject=null,ac=null;
+ const music=$('music').files[0];
+ if(music){
+  try{
+   audioObject=URL.createObjectURL(music);audioElement=new Audio(audioObject);audioElement.loop=true;
+   ac=new (window.AudioContext||window.webkitAudioContext)();
+   const src=ac.createMediaElementSource(audioElement),dest=ac.createMediaStreamDestination();src.connect(dest);src.connect(ac.destination);
+   dest.stream.getAudioTracks().forEach(t=>stream.addTrack(t));await ac.resume();await audioElement.play();
+  }catch(err){setStatus('Không thể ghép nhạc trên trình duyệt này. Video vẫn sẽ được xuất không có nhạc.');}
+ }
+ let chunks=[];let recorder;
+ try{recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:6500000})}catch(e){setStatus('Không khởi tạo được bộ xuất video trên thiết bị này.');return}
+ recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+ recorder.onstop=()=>{
+  const blob=new Blob(chunks,{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=`BOY7X-video.${mime.includes('mp4')?'mp4':'webm'}`;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+  stream.getTracks().forEach(t=>t.stop());if(audioElement){audioElement.pause();URL.revokeObjectURL(audioObject)}if(ac)ac.close();
+  $('progress').style.display='none';$('exportBtn').disabled=false;setStatus('Video đã xuất xong. Nếu iPhone hỏi xác nhận tải xuống, hãy chọn Tải về hoặc Lưu vào Ảnh.');
+ };
+ recorder.start(250);$('exportBtn').disabled=true;$('progress').style.display='block';setStatus('Đang dựng video trên thiết bị. Hãy giữ trang mở cho đến khi hoàn tất.');
+ const start=performance.now();
+ function render(now){
+  let elapsed=now-start,idx=Math.min(images.length-1,Math.floor(elapsed/dur)),within=elapsed-idx*dur;
+  frameAt(within,idx);$('bar').style.width=Math.min(100,elapsed/total*100)+'%';
+  if(elapsed<total){requestAnimationFrame(render)}else{frameAt(dur,images.length-1);recorder.stop()}
+ }
+ requestAnimationFrame(render);
+};
+$('aiInfo').onclick=()=>{$('aiStatus').hidden=!$('aiStatus').hidden};
+if('serviceWorker'in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body></html>
